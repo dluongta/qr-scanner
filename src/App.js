@@ -48,16 +48,29 @@ const useStyles = makeStyles((theme) => ({
     top: 0,
     margin: theme.spacing(2),
   },
+  fileInput: {
+    display: "none",
+  },
+  qrPreview: {
+    maxWidth: "100px",
+    maxHeight: "100px",
+    objectFit: "contain",
+    borderRadius: "8px",
+    marginTop: theme.spacing(1),
+  },
 }));
 
 function App() {
   const videoRef = useRef(null);
   const classes = useStyles();
   const [result, setResult] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [scanning, setScanning] = useState(true); // New state to track scanning
 
   useEffect(() => {
     const qrScanner = new QrScanner(videoRef.current, (result) => {
-      setResult((prev) => (prev ? prev : result));
+      setResult(result);
+      setScanning(false); // Stop scanning once a result is found
     });
 
     qrScanner.start().catch(console.error);
@@ -68,13 +81,51 @@ function App() {
 
   const handleOnScanAnother = () => {
     setResult(null);
+    setImagePreview(null);
+    setScanning(true); // Reset scanning state
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result); // Set the preview image
+      };
+      reader.readAsDataURL(file);
+
+      QrScanner.scanImage(file)
+        .then((result) => {
+          setResult(result);
+          setScanning(false); // Stop scanning when a result is found
+        })
+        .catch((error) => {
+          console.error("Error scanning QR code from image:", error);
+          setResult(null);
+          setScanning(true); // Reset scanning on error
+        });
+    } else {
+      console.error("Uploaded file is not a valid image");
+    }
   };
 
   const scanningView = (
     <div className={classes.scannerTitleBackground}>
       <Typography variant="body1" className={classes.scannerTitle}>
-        Scanning QR...
+        {scanning ? "Scanning QR..." : "Scan Complete!"}
       </Typography>
+      <label htmlFor="file-upload">
+        <Button variant="contained" component="span" color="primary">
+          Upload Image
+        </Button>
+      </label>
+      <input
+        id="file-upload"
+        type="file"
+        accept="image/*"
+        className={classes.fileInput}
+        onChange={handleFileChange}
+      />
     </div>
   );
 
@@ -92,6 +143,13 @@ function App() {
                   </Link>
                 </CardContent>
               </Card>
+              {imagePreview && (
+                <img
+                  src={imagePreview}
+                  alt="QR Code Preview"
+                  className={classes.qrPreview}
+                />
+              )}
             </Grid>
           </Grid>
         </CardContent>

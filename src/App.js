@@ -6,7 +6,6 @@ import {
   CardActions,
   CardContent,
   Typography,
-  Link,
   Grid,
   Grow,
 } from "@material-ui/core";
@@ -109,6 +108,16 @@ function App() {
     }
   };
 
+  const handleCopyResult = () => {
+    if (result) {
+      navigator.clipboard.writeText(result).then(() => {
+        alert("Result copied to clipboard!");
+      }).catch((err) => {
+        console.error("Failed to copy text: ", err);
+      });
+    }
+  };
+
   const scanningView = (
     <div className={classes.scannerTitleBackground}>
       <Typography variant="body1" className={classes.scannerTitle}>
@@ -137,10 +146,10 @@ function App() {
           <Grid container>
             <Grid item>
               <Card variant="outlined">
-                <CardContent>
-                  <Link href={result} target="_blank" rel="noopener">
+                <CardContent style={{padding:"18px"}}>
+                  <div>
                     {result}
-                  </Link>
+                  </div>
                 </CardContent>
               </Card>
               {imagePreview && (
@@ -155,6 +164,9 @@ function App() {
         </CardContent>
         <CardActions>
           <Button onClick={handleOnScanAnother}>Scan another</Button>
+          <Button onClick={handleCopyResult} color="primary">
+            Copy Result
+          </Button>
         </CardActions>
       </Card>
     </Grow>
